@@ -1,0 +1,63 @@
+﻿<Window x:Class="ParkingMap.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ParkingMap"
+        xmlns:ThinkGeoUI="clr-namespace:ThinkGeo.UI.Wpf;assembly=ThinkGeo.UI.Wpf"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <ThinkGeoUI:MapView Grid.Column="0" Grid.Row="0" x:Name="mapView" Loaded="mapView_Loaded" MapClick="mapView_MapClick"></ThinkGeoUI:MapView>
+        <Grid Grid.Row="0" Grid.Column="1">
+            <Label Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" x:Name="lblDraw" Content="Manage drawings:" />
+            <ToggleButton Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="btnDraw" Margin="4 4 4 4" Content="Draw" Checked="btnDraw_Checked" Unchecked="btnDraw_Unchecked"/>
+            <Button Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2" x:Name="btnClear" Margin="4 4 4 4" Content="Clear" Click="btnClear_Click"/>
+            <Label Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="4" x:Name="lblDrawAction" />
+            
+            <Label Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="4" x:Name="lblSizeOfLot" Content="Size of parking lot:" />
+            <Label Grid.Column="0" Grid.Row="4" x:Name="lblWidth" Content="Width:" />
+            <TextBox Grid.Column="1" Grid.Row="4" x:Name="txtWidth" Margin="4 4 4 4" Width="20" Text="4" />
+            <Label Grid.Column="2" Grid.Row="4" x:Name="lblLength" Content="Length:" />
+            <TextBox Grid.Column="3" Grid.Row="4" x:Name="txtLength" Margin="4 4 4 4" Width="20" Text="8" />
+            
+            <Label Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="4" x:Name="lblSquare" Content="Square:" />
+            <TextBox Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="3" x:Name="txtSquare" />
+            
+            <Label Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="4" x:Name="lblQtyLots" Content="Qty of lots:" />
+            <TextBox Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="4" x:Name="txtQtyLots" />
+
+            <Button Grid.Column="0" Grid.Row="9" Grid.ColumnSpan="4" x:Name="btnShowMap" Margin="4 4 4 4" Content="Hide map" Click="btnShowMap_Click" />
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+        </Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+    </Grid>
+</Window>
