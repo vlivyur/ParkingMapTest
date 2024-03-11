@@ -52,53 +52,86 @@
 
         private async void TrackOverlay_OnPolygonDrawn(object? sender, TrackEndedTrackInteractiveOverlayEventArgs e)
         {
-            AreaBaseShape shape = (AreaBaseShape)e.TrackShape;
+            PolygonShape shape = (PolygonShape)e.TrackShape;
             double square = shape.GetArea(GeographyUnit.Meter, AreaUnit.SquareMeters);
             this.txtSquare.Text = square.ToString();
             this.DrawLots(shape);
         }
 
-        private async void DrawLots(AreaBaseShape where)
+        private async void DrawLots(PolygonShape where)
         {
-            RectangleShape box = where.GetBoundingBox();
-
             double width;
             if (!double.TryParse(this.txtWidth.Text, out width))
                 return;
             double length;
             if (!double.TryParse(this.txtLength.Text, out length))
                 return;
+
             if (!this.parkinglotslayer.FeatureSource.IsOpen)
                 this.parkinglotslayer.FeatureSource.Open();
             this.parkinglotslayer.Clear();
             this.parkinglotslayer.FeatureSource.BeginTransaction();
-            for (double x = box.MinX; x < box.MaxX; x += width)
+
+            // draw lots along the longest side
+            LineShape longestLine = MainWindow.LongestLineGet(where);
+            longestLine.ScaleUp(100);
+            double angle = this.AngleOfTheLineGet(longestLine.Vertices[0], longestLine.Vertices[1]);
+            // in which side of longest line our figure is
+            LineShape nextline = (LineShape)longestLine.CloneDeep();
+            nextline.TranslateByDegree(length, angle);
+            MultilineShape tmp = nextline.GetIntersection(where);
+            if (tmp.Lines.Count == 0)
             {
-                Vertex p1 = new(x, box.MinY);
-                Vertex p2 = new(x, box.MaxY);
-                LineShape line = new LineShape(new Collection<Vertex> { p1, p2});
-                this.parkinglotslayer.FeatureSource.AddFeature(line);
+                angle = (angle + 180) % 360;
             }
+            // ready to draw parallel lines
+            nextline = (LineShape)longestLine.CloneDeep();
+            tmp = nextline.GetIntersection(where);
+            if (tmp.Lines.Count > 0) // shape isn't too narrow
+            {
+                while (tmp.Lines.Count > 0)
+                {
+                    this.parkinglotslayer.FeatureSource.AddFeature(tmp.Lines[0]);
+                    nextline.TranslateByDegree(length, angle);
+                    tmp = nextline.GetIntersection(where);
+                }
+            }
+            // TODO: draw perpendicular lines
+
+
             this.parkinglotslayer.FeatureSource.CommitTransaction();
             this.parkinglotslayer.FeatureSource.Close();
             await this.mapView.RefreshAsync();
             return;
         }
 
-        private void mapView_MapClick(object sender, MapClickMapViewEventArgs e)
+        private double AngleOfTheLineGet(Vertex from, Vertex to)
         {
-            //this.txtX.Text = e.WorldX.ToString();
-            //this.txtY.Text = e.WorldY.ToString();
+            double angle;
+
+            if (from.X != to.X)
+            {
+                double tangentangle = (from.Y - to.Y) / (to.X - from.X);
+                angle = Math.Atan(tangentangle) * 180 / Math.PI;
+                if (angle < 0)
+                {
+                    angle += 360;
+                }
+            }
+            else
+            {
+                angle = (from.Y > to.Y) ? 90 : 270;
+            }
+
+            return angle % 360;
         }
 
-        private void btnDraw_Click(object sender, RoutedEventArgs e)
+        private void mapView_MapClick(object sender, MapClickMapViewEventArgs e)
         {
         }
 
         private async void btnClear_Click(object sender, RoutedEventArgs e)
         {
-            this.mapView.TrackOverlay.TrackMode = TrackMode.None;
-            this.lblDrawAction.Content = String.Empty;
             mapView.TrackOverlay.TrackShapeLayer.InternalFeatures.Clear();
             await mapView.TrackOverlay.RefreshAsync();
         }
@@ -119,6 +152,26 @@
         {
             this.mapView.TrackOverlay.TrackMode = TrackMode.None;
             this.lblDrawAction.Content = String.Empty;
+        }
+
+        private static LineShape LongestLineGet(PolygonShape where)
+        {
+            Vertex v = where.OuterRing.Vertices[0];
+            LineShape longestline = null;
+            double maxlength = 0;
+            for (int i = 1; i < where.OuterRing.Vertices.Count; i++)
+            {
+                Vertex e = where.OuterRing.Vertices[i];
+                LineShape line = new LineShape(new Collection<Vertex> { v, e });
+                double tmp = line.GetLength(GeographyUnit.Meter, DistanceUnit.Meter);
+                if (tmp > maxlength)
+                {
+                    maxlength = tmp;
+                    longestline = line;
+                }
+                v = e;
+            }
+            return longestline;
         }
     }
 }
