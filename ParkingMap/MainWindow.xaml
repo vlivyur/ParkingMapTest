@@ -14,20 +14,30 @@
             <ToggleButton Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="btnDraw" Margin="4 4 4 4" Content="Draw" Checked="btnDraw_Checked" Unchecked="btnDraw_Unchecked"/>
             <Button Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2" x:Name="btnClear" Margin="4 4 4 4" Content="Clear" Click="btnClear_Click"/>
             <Label Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="4" x:Name="lblDrawAction" />
-            
+
             <Label Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="4" x:Name="lblSizeOfLot" Content="Size of parking lot:" />
             <Label Grid.Column="0" Grid.Row="4" x:Name="lblWidth" Content="Width:" />
             <TextBox Grid.Column="1" Grid.Row="4" x:Name="txtWidth" Margin="4 4 4 4" Width="20" Text="4" />
             <Label Grid.Column="2" Grid.Row="4" x:Name="lblLength" Content="Length:" />
             <TextBox Grid.Column="3" Grid.Row="4" x:Name="txtLength" Margin="4 4 4 4" Width="20" Text="8" />
-            
-            <Label Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="4" x:Name="lblSquare" Content="Square:" />
-            <TextBox Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="3" x:Name="txtSquare" />
-            
-            <Label Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="4" x:Name="lblQtyLots" Content="Qty of lots:" />
-            <TextBox Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="4" x:Name="txtQtyLots" />
 
-            <Button Grid.Column="0" Grid.Row="9" Grid.ColumnSpan="4" x:Name="btnShowMap" Margin="4 4 4 4" Content="Hide map" Click="btnShowMap_Click" />
+            <Label Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="4" x:Name="lblSquare" Content="Square:" />
+            <TextBox Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="3" Margin="4 4 4 4" x:Name="txtSquare" IsReadOnly="True" />
+
+            <Button Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="Calculate" Content="Calculate" Click="Calculate_Click" />
+
+            <Label Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="4" x:Name="lblQtyLots" Content="Qty of lots:" />
+            <TextBox Grid.Column="0" Grid.Row="9" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="txtQtyLots" IsReadOnly="True" />
+
+            <Label Grid.Column="1" Grid.Row="10" x:Name="lblX" Content=":X" />
+            <TextBox Grid.Column="0" Grid.Row="10" Margin="4 4 4 4" x:Name="txtX" IsReadOnly="True" />
+            <Label Grid.Column="3" Grid.Row="10" x:Name="lblY" Content=":Y" />
+            <TextBox Grid.Column="2" Grid.Row="10" Margin="4 4 4 4" x:Name="txtY" IsReadOnly="True" />
+
+            <Button Grid.Column="0" Grid.Row="11" Grid.ColumnSpan="4" x:Name="btnShowMap" Margin="4 4 4 4" Content="Hide map" Click="btnShowMap_Click" />
+
+            <Button Grid.Column="0" Grid.Row="12" Grid.ColumnSpan="2" x:Name="btnSave" Margin="4 4 4 4" Content="Save" Click="btnSave_Click" IsEnabled="False" />
+            <Button Grid.Column="2" Grid.Row="12" Grid.ColumnSpan="2" x:Name="btnLoad" Margin="4 4 4 4" Content="Load" Click="btnLoad_Click" IsEnabled="False" />
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />

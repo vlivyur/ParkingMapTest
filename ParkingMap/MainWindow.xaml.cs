@@ -26,6 +26,8 @@
 
         InMemoryFeatureLayer parkinglotslayer = new();
         OpenStreetMapOverlay openStreetMapOverlay = new();
+        //InMemoryFeatureLayer secondarylayer = new();
+
 
         private void mapView_Loaded(object sender, RoutedEventArgs e)
         {
@@ -40,10 +42,17 @@
 
             this.parkinglotslayer.ZoomLevelSet.ZoomLevel01.DefaultPointStyle = new PointStyle(PointSymbolType.Circle, 1, GeoBrushes.Blue);
             this.parkinglotslayer.ZoomLevelSet.ZoomLevel01.DefaultLineStyle = new LineStyle(GeoPens.PaleRed);
+            this.parkinglotslayer.ZoomLevelSet.ZoomLevel01.DefaultAreaStyle = new AreaStyle(GeoPens.Firebrick);
             this.parkinglotslayer.ZoomLevelSet.ZoomLevel01.ApplyUntilZoomLevel = ApplyUntilZoomLevel.Level20;
             LayerOverlay parkinglotsoverlay = new();
-            parkinglotsoverlay.Layers.Add(LayerTypes.ParkingLotsLayer, this.parkinglotslayer);
-            this.mapView.Overlays.Add(LayerTypes.ParkingLotsOverlay, parkinglotsoverlay);
+            parkinglotsoverlay.Layers.Add(LayerNames.ParkingLotsLayer, this.parkinglotslayer);
+            this.mapView.Overlays.Add(LayerNames.ParkingLotsOverlay, parkinglotsoverlay);
+
+            //this.secondarylayer.ZoomLevelSet.ZoomLevel01.DefaultLineStyle = new LineStyle(GeoPens.Red);
+            //this.secondarylayer.ZoomLevelSet.ZoomLevel01.ApplyUntilZoomLevel = ApplyUntilZoomLevel.Level20;
+            //LayerOverlay secondaryoverlay = new();
+            //secondaryoverlay.Layers.Add(LayerNames.SecondaryLayer, this.secondarylayer);
+            //this.mapView.Overlays.Add(LayerNames.SecondaryOverlay, secondaryoverlay);
 
             // TODO: overlay with selected lots
 
@@ -60,79 +69,19 @@
 
         private async void DrawLots(PolygonShape where)
         {
-            double width;
-            if (!double.TryParse(this.txtWidth.Text, out width))
-                return;
-            double length;
-            if (!double.TryParse(this.txtLength.Text, out length))
-                return;
-
-            if (!this.parkinglotslayer.FeatureSource.IsOpen)
-                this.parkinglotslayer.FeatureSource.Open();
-            this.parkinglotslayer.Clear();
-            this.parkinglotslayer.FeatureSource.BeginTransaction();
-
-            // draw lots along the longest side
-            LineShape longestLine = MainWindow.LongestLineGet(where);
-            longestLine.ScaleUp(100);
-            double angle = this.AngleOfTheLineGet(longestLine.Vertices[0], longestLine.Vertices[1]);
-            // in which side of longest line our figure is
-            LineShape nextline = (LineShape)longestLine.CloneDeep();
-            nextline.TranslateByDegree(length, angle);
-            MultilineShape tmp = nextline.GetIntersection(where);
-            if (tmp.Lines.Count == 0)
-            {
-                angle = (angle + 180) % 360;
-            }
-            // ready to draw parallel lines
-            nextline = (LineShape)longestLine.CloneDeep();
-            tmp = nextline.GetIntersection(where);
-            if (tmp.Lines.Count > 0) // shape isn't too narrow
-            {
-                while (tmp.Lines.Count > 0)
-                {
-                    this.parkinglotslayer.FeatureSource.AddFeature(tmp.Lines[0]);
-                    nextline.TranslateByDegree(length, angle);
-                    tmp = nextline.GetIntersection(where);
-                }
-            }
-            // TODO: draw perpendicular lines
-
-
-            this.parkinglotslayer.FeatureSource.CommitTransaction();
-            this.parkinglotslayer.FeatureSource.Close();
-            await this.mapView.RefreshAsync();
+            this.BuildLots(where);
             return;
-        }
-
-        private double AngleOfTheLineGet(Vertex from, Vertex to)
-        {
-            double angle;
-
-            if (from.X != to.X)
-            {
-                double tangentangle = (from.Y - to.Y) / (to.X - from.X);
-                angle = Math.Atan(tangentangle) * 180 / Math.PI;
-                if (angle < 0)
-                {
-                    angle += 360;
-                }
-            }
-            else
-            {
-                angle = (from.Y > to.Y) ? 90 : 270;
-            }
-
-            return angle % 360;
         }
 
         private void mapView_MapClick(object sender, MapClickMapViewEventArgs e)
         {
+            this.txtX.Text = e.WorldX.ToString("#.0000");
+            this.txtY.Text = e.WorldY.ToString("#.0000");
         }
 
         private async void btnClear_Click(object sender, RoutedEventArgs e)
         {
-            mapView.TrackOverlay.TrackShapeLayer.InternalFeatures.Clear();
+            this.mapView.TrackOverlay.TrackShapeLayer.InternalFeatures.Clear();
             await mapView.TrackOverlay.RefreshAsync();
         }
 
@@ -154,24 +103,95 @@
             this.lblDrawAction.Content = String.Empty;
         }
 
-        private static LineShape LongestLineGet(PolygonShape where)
+        private void Calculate_Click(object sender, RoutedEventArgs e)
         {
-            Vertex v = where.OuterRing.Vertices[0];
-            LineShape longestline = null;
-            double maxlength = 0;
-            for (int i = 1; i < where.OuterRing.Vertices.Count; i++)
+            PolygonShape shape = (PolygonShape)this.mapView.TrackOverlay.GetTrackingShape();
+            if (shape != null)
+                this.BuildLots(shape);
+        }
+
+        private async void BuildLots(PolygonShape where)
+        {
+            double width;
+            if (!double.TryParse(this.txtWidth.Text, out width))
+                return;
+            double length;
+            if (!double.TryParse(this.txtLength.Text, out length))
+                return;
+
+            //if (!this.secondarylayer.FeatureSource.IsOpen)
+            //    this.secondarylayer.FeatureSource.Open();
+            //this.secondarylayer.Clear();
+            //this.secondarylayer.FeatureSource.BeginTransaction();
+
+            // draw lots along the longest side
+            LineShape longestLine = ShapeOperations.LongestSideOfShape(where);
+            longestLine.ScaleUp(100);
+            double angle = ShapeOperations.InclineOfTheLine(longestLine.Vertices[0], longestLine.Vertices[1]);
+            // in which side of longest line our figure is
+            LineShape nextline = (LineShape)longestLine.CloneDeep();
+            nextline.TranslateByDegree(length, angle);
+            MultilineShape intersection = nextline.GetIntersection(where);
+            if (intersection.Lines.Count == 0)
             {
-                Vertex e = where.OuterRing.Vertices[i];
-                LineShape line = new LineShape(new Collection<Vertex> { v, e });
-                double tmp = line.GetLength(GeographyUnit.Meter, DistanceUnit.Meter);
-                if (tmp > maxlength)
-                {
-                    maxlength = tmp;
-                    longestline = line;
-                }
-                v = e;
+                angle = (angle + 180) % 360;
             }
-            return longestline;
+            // ready to draw parallel lines
+            nextline = (LineShape)longestLine.CloneDeep();
+            intersection = nextline.GetIntersection(where);
+            List<LineShape> lines = new();
+            if (intersection.Lines.Count > 0) // shape isn't too narrow
+            {
+                while (intersection.Lines.Count > 0)
+                {
+                    lines.Add(intersection.Lines[0]);
+                    //this.secondarylayer.FeatureSource.AddFeature(intersection.Lines[0]);
+                    nextline.TranslateByDegree(length, angle);
+                    intersection = nextline.GetIntersection(where);
+                }
+            }
+            // TODO: draw parking lots
+            if (!this.parkinglotslayer.FeatureSource.IsOpen)
+                this.parkinglotslayer.FeatureSource.Open();
+            this.parkinglotslayer.Clear();
+            this.parkinglotslayer.FeatureSource.BeginTransaction();
+            if (lines.Count > 0)
+            {
+                LineShape line1 = lines[0];
+                for (int i = 1; i < lines.Count; i++)
+                {
+                    LineShape line2 = lines[i];
+                    LineShape shortline = ShapeOperations.ProjectionLineOnLineGet(line1, line2);
+                    angle = ShapeOperations.InclineOfTheLine(shortline.Vertices[0], shortline.Vertices[1]);
+                    //this.parkinglotslayer.FeatureSource.AddFeature(shortline);
+                    double shortlinelength = shortline.GetLength(GeographyUnit.Meter, DistanceUnit.Meter) - width;
+                    for (double l = 0; l < shortlinelength; l += width)
+                    {
+                        PointShape point = shortline.GetPointOnALine(StartingPoint.FirstPoint, l, GeographyUnit.Meter, DistanceUnit.Meter);
+                        PolygonShape r = ShapeOperations.ParkingLotDraw(point, angle, length, width);
+                        this.parkinglotslayer.FeatureSource.AddFeature(r);
+                    }
+                    line1 = line2;
+                }
+            }
+            this.parkinglotslayer.FeatureSource.CommitTransaction();
+            this.parkinglotslayer.FeatureSource.Close();
+            //this.secondarylayer.FeatureSource.CommitTransaction();
+            //this.secondarylayer.FeatureSource.Close();
+            await this.mapView.RefreshAsync();
+        }
+
+        private void btnSave_Click(object sender, RoutedEventArgs e)
+        {
+            PolygonShape shape = (PolygonShape)this.mapView.TrackOverlay.GetTrackingShape();
+            if (shape != null)
+            {
+            }
+        }
+
+        private void btnLoad_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
