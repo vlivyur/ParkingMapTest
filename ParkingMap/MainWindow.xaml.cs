@@ -155,6 +155,7 @@
                 this.parkinglotslayer.FeatureSource.Open();
             this.parkinglotslayer.Clear();
             this.parkinglotslayer.FeatureSource.BeginTransaction();
+            int countOfLots = 0;
             if (lines.Count > 0)
             {
                 LineShape line1 = lines[0];
@@ -170,6 +171,7 @@
                         PointShape point = shortline.GetPointOnALine(StartingPoint.FirstPoint, l, GeographyUnit.Meter, DistanceUnit.Meter);
                         PolygonShape r = ShapeOperations.ParkingLotDraw(point, angle, length, width);
                         this.parkinglotslayer.FeatureSource.AddFeature(r);
+                        countOfLots++;
                     }
                     line1 = line2;
                 }
@@ -179,6 +181,7 @@
             //this.secondarylayer.FeatureSource.CommitTransaction();
             //this.secondarylayer.FeatureSource.Close();
             await this.mapView.RefreshAsync();
+            this.txtQtyLots.Text = countOfLots.ToString();
         }
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
