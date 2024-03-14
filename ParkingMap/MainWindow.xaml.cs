@@ -1,6 +1,9 @@
 ﻿namespace ParkingMap
 {
+    using System.Collections.ObjectModel;
+    using System.IO;
     using System.Windows;
+    using Microsoft.Win32;
     using ThinkGeo.Core;
 
     /// <summary>
@@ -70,8 +73,13 @@
 
         private async void btnClear_Click(object sender, RoutedEventArgs e)
         {
-            this.mapView.TrackOverlay.TrackShapeLayer.InternalFeatures.Clear();
-            await mapView.TrackOverlay.RefreshAsync();
+            if (this.mapView.TrackOverlay.TrackShapeLayer.InternalFeatures.Count > 0)
+                this.mapView.TrackOverlay.TrackShapeLayer.InternalFeatures.Clear();
+            else if (this.parkinglotslayer.InternalFeatures.Count > 0)
+                this.parkinglotslayer.InternalFeatures.Clear();
+            else
+                return;
+            await mapView.RefreshAsync();
         }
 
         private void btnShowMap_Click(object sender, RoutedEventArgs e)
@@ -94,9 +102,11 @@
 
         private void Calculate_Click(object sender, RoutedEventArgs e)
         {
-            PolygonShape shape = (PolygonShape)this.mapView.TrackOverlay.GetTrackingShape();
-            if (shape != null)
-                this.BuildLots(shape);
+            Collection<Feature> polygons = this.mapView.TrackOverlay.TrackShapeLayer.FeatureSource.GetAllFeatures(ReturningColumnsType.NoColumns);
+            foreach (var shape in polygons)
+            {
+                this.BuildLots((PolygonShape)shape.GetShape());
+            }
         }
 
         private async void BuildLots(PolygonShape where)
@@ -183,17 +193,75 @@
             this.txtQtyLots.Text = countOfLots.ToString();
         }
 
-        private void btnSave_Click(object sender, RoutedEventArgs e)
+        private async void btnSave_Click(object sender, RoutedEventArgs e)
         {
-            PolygonShape shape = (PolygonShape)this.mapView.TrackOverlay.GetTrackingShape();
-            if (shape != null)
+            Collection<Feature> shapes = this.mapView.TrackOverlay.TrackShapeLayer.FeatureSource.GetAllFeatures(ReturningColumnsType.NoColumns);
+            if (shapes.Count > 0)
             {
+                SaveFileDialog dlg = new();
+                dlg.DefaultExt = ".geojson";
+                dlg.Filter = "GeoJSON (.geojson)|*.geojson";
+                bool result = dlg.ShowDialog() ?? false;
+
+                if (result)
+                {
+                    string filename = dlg.FileName;
+                    string str = shapes.GetGeoJson();
+                    using (StreamWriter sw = new(filename))
+                    {
+                        await sw.WriteAsync(str);
+                    }
+                }
             }
         }
 
-        private void btnLoad_Click(object sender, RoutedEventArgs e)
+        private async void btnLoad_Click(object sender, RoutedEventArgs e)
         {
-
+            bool result = true;
+            if (this.mapView.TrackOverlay.TrackShapeLayer.InternalFeatures.Count > 0)
+            {
+                result = MessageBox.Show("Do you want to add more drawings to the existing ones?\nIf no you can clear everything up with Clear button", "There are some drawings on the map...", MessageBoxButton.YesNo, MessageBoxImage.Question)
+                    == MessageBoxResult.Yes;
+            }
+            if (result)
+            {
+                OpenFileDialog dlg = new();
+                dlg.DefaultExt = ".geojson";
+                dlg.Filter = "GeoJSON (.geojson)|*.geojson";
+                result = dlg.ShowDialog() ?? false;
+                if (result)
+                {
+                    string filename = dlg.FileName;
+                    string str = String.Empty;
+                    using (StreamReader sr = new(filename))
+                    {
+                        str = await sr.ReadToEndAsync();
+                    }
+                    if (!String.IsNullOrWhiteSpace(str))
+                    {
+                        bool closeIt = false, commitTransaction = false;
+                        if (!this.mapView.TrackOverlay.TrackShapeLayer.IsOpen)
+                        {
+                            this.mapView.TrackOverlay.TrackShapeLayer.Open();
+                            closeIt = true;
+                        }
+                        if (!this.mapView.TrackOverlay.TrackShapeLayer.FeatureSource.IsInTransaction)
+                        {
+                            this.mapView.TrackOverlay.TrackShapeLayer.FeatureSource.BeginTransaction();
+                            commitTransaction = true;
+                        }
+                        foreach (Feature feature in Feature.CreateFeaturesFromGeoJson(str))
+                        {
+                            this.mapView.TrackOverlay.TrackShapeLayer.FeatureSource.AddFeature(feature);
+                        }
+                        if (commitTransaction)
+                            this.mapView.TrackOverlay.TrackShapeLayer.FeatureSource.CommitTransaction();
+                        if (closeIt)
+                            this.mapView.TrackOverlay.TrackShapeLayer.Close();
+                        await this.mapView.RefreshAsync();
+                    }
+                }
+            }
         }
     }
 }

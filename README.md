@@ -6,7 +6,9 @@ ThinkGeo requires [registration](https://helpdesk.thinkgeo.com/register) (eva
 With pressed Draw button a user draws an outline for parking space. Last point of the figure should be made with double click. On finishing area of the figure will be calculated automatically (field Area).
 Size of a parking lot could be adjusted with Width and Length fields and recalculated with button Calculate.
 When Draw button is pressed it is impossible to move map with mouse.
-Clear button is for removing user's drawn figure (not for drawn parking lots).
+Clear button is for removing user's drawn figure (first click) or generated parking lots (second click).
+Load button adds another area to current 
 # Known issues
 Not all figures could be processed. If this happend to you, try to start drawing from a horisontal line and put points anticlockwise.
 In most cases figure should be convex.
+After loading another area, it stops showing drawn areas.
