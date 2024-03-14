@@ -100,32 +100,48 @@
             this.lblDrawAction.Content = String.Empty;
         }
 
-        private void Calculate_Click(object sender, RoutedEventArgs e)
+        private async void Calculate_Click(object sender, RoutedEventArgs e)
         {
             Collection<Feature> polygons = this.mapView.TrackOverlay.TrackShapeLayer.FeatureSource.GetAllFeatures(ReturningColumnsType.NoColumns);
-            foreach (var shape in polygons)
-            {
-                this.BuildLots((PolygonShape)shape.GetShape());
-            }
+            this.ProcessDrawnAreas(polygons);
         }
 
-        private async void BuildLots(PolygonShape where)
+        private async void ProcessDrawnAreas(Collection<Feature> polygons)
         {
-            double width;
-            if (!double.TryParse(this.txtWidth.Text, out width))
-                return;
-            double length;
-            if (!double.TryParse(this.txtLength.Text, out length))
-                return;
-
             //if (!this.secondarylayer.FeatureSource.IsOpen)
             //    this.secondarylayer.FeatureSource.Open();
             //this.secondarylayer.Clear();
             //this.secondarylayer.FeatureSource.BeginTransaction();
             if (!this.parkinglotslayer.FeatureSource.IsOpen)
                 this.parkinglotslayer.FeatureSource.Open();
-            this.parkinglotslayer.Clear();
+            if (!this.parkinglotslayer.FeatureSource.IsInTransaction)
+                this.parkinglotslayer.Clear();
             this.parkinglotslayer.FeatureSource.BeginTransaction();
+
+            List<BaseShape> result = new();
+            foreach (Feature area in polygons)
+            {
+                result = this.BuildLots((PolygonShape)area.GetShape());
+                foreach (BaseShape resshape in result)
+                    this.parkinglotslayer.FeatureSource.AddFeature(resshape);
+            }
+
+            this.parkinglotslayer.FeatureSource.CommitTransaction();
+            this.parkinglotslayer.FeatureSource.Close();
+            //this.secondarylayer.FeatureSource.CommitTransaction();
+            //this.secondarylayer.FeatureSource.Close();
+            await this.mapView.RefreshAsync();
+        }
+
+        private List<BaseShape> BuildLots(PolygonShape where)
+        {
+            List<BaseShape> result = new();
+            double width;
+            if (!double.TryParse(this.txtWidth.Text, out width))
+                return result;
+            double length;
+            if (!double.TryParse(this.txtLength.Text, out length))
+                return result;
 
             // draw lots along the longest side
             LineShape longestLine = ShapeOperations.LongestSideOfShape(where);
@@ -185,12 +201,8 @@
                     }
                 }
             }
-            this.parkinglotslayer.FeatureSource.CommitTransaction();
-            this.parkinglotslayer.FeatureSource.Close();
-            //this.secondarylayer.FeatureSource.CommitTransaction();
-            //this.secondarylayer.FeatureSource.Close();
-            await this.mapView.RefreshAsync();
             this.txtQtyLots.Text = countOfLots.ToString();
+            return result;
         }
 
         private async void btnSave_Click(object sender, RoutedEventArgs e)
