@@ -1,19 +1,14 @@
-﻿namespace ParkingMaprTest
+﻿namespace ParkingMapTest
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using NetTopologySuite.Triangulate;
     using ParkingMap;
     using ThinkGeo.Core;
 
     [TestClass]
     public class ShapeOperationsTest
     {
+        #region InclineOfLine
         [TestMethod]
-        public void InclineOfTheLine_Right()
+        public void InclineOfLine_Right()
         {
             Vertex from = new(0, 0);
             Vertex to = new(10, 0);
@@ -22,7 +17,7 @@
         }
 
         [TestMethod]
-        public void InclineOfTheLine_UpRight()
+        public void InclineOfLine_UpRight()
         {
             Vertex from = new(0, 0);
             Vertex to = new(10, 10);
@@ -31,7 +26,7 @@
         }
 
         [TestMethod]
-        public void InclineOfTheLine_Up()
+        public void InclineOfLine_Up()
         {
             Vertex from = new(0, 0);
             Vertex to = new(0, 10);
@@ -40,7 +35,7 @@
         }
 
         [TestMethod]
-        public void InclineOfTheLine_UpLeft()
+        public void InclineOfLine_UpLeft()
         {
             Vertex from = new(0, 0);
             Vertex to = new(-10, 10);
@@ -49,7 +44,7 @@
         }
 
         [TestMethod]
-        public void InclineOfTheLine_Left()
+        public void InclineOfLine_Left()
         {
             Vertex from = new(0, 0);
             Vertex to = new(-10, 0);
@@ -58,7 +53,7 @@
         }
 
         [TestMethod]
-        public void InclineOfTheLine_DownLeft()
+        public void InclineOfLine_DownLeft()
         {
             Vertex from = new(0, 0);
             Vertex to = new(-10, -10);
@@ -67,7 +62,7 @@
         }
 
         [TestMethod]
-        public void InclineOfTheLine_Down()
+        public void InclineOfLine_Down()
         {
             Vertex from = new(0, 0);
             Vertex to = new(0, -10);
@@ -76,12 +71,58 @@
         }
 
         [TestMethod]
-        public void InclineOfTheLine_DownRight()
+        public void InclineOfLine_DownRight()
         {
             Vertex from = new(0, 0);
             Vertex to = new(10, -10);
             double expected = 315;
             Assert.AreEqual(expected, ShapeOperations.InclineOfTheLine(from, to));
         }
+        #endregion
+
+        #region ProjectionLineOnLine
+        [TestMethod]
+        public void ProjectionLineOnLine_VerticalRight()
+        {
+            LineShape line1 = ShapeFactory.CreateLine(new Vertex(-10, 10), new Vertex(-10, -10));
+            LineShape line2 = ShapeFactory.CreateLine(new Vertex(10, 1), new Vertex(10, -1));
+            LineShape expected = ShapeFactory.CreateLine(new Vertex(-10, 1), new Vertex(-10, -1));
+            this.ProjectionLineOnLine_Check(expected, line1, line2);
+        }
+
+        [TestMethod]
+        public void ProjectionLineOnLine_HorizontalUp()
+        {
+            LineShape line1 = ShapeFactory.CreateLine(new Vertex(-10, -10), new Vertex(10, -10));
+            LineShape line2 = ShapeFactory.CreateLine(new Vertex(-1, 10), new Vertex(1, 10));
+            LineShape expected = ShapeFactory.CreateLine(new Vertex(-1, -10), new Vertex(1, -10));
+            this.ProjectionLineOnLine_Check(expected, line1, line2);
+        }
+
+        [TestMethod]
+        public void ProjectionLineOnLine_VerticalLeft()
+        {
+            LineShape line1 = ShapeFactory.CreateLine(new Vertex(10, 10), new Vertex(10, -10));
+            LineShape line2 = ShapeFactory.CreateLine(new Vertex(-10, 1), new Vertex(-10, -1));
+            LineShape expected = ShapeFactory.CreateLine(new Vertex(10, 1), new Vertex(10, -1));
+            this.ProjectionLineOnLine_Check(expected, line1, line2);
+        }
+
+        [TestMethod]
+        public void ProjectionLineOnLine_HorizontalDown()
+        {
+            LineShape line1 = ShapeFactory.CreateLine(new Vertex(-10, 10), new Vertex(10, 10));
+            LineShape line2 = ShapeFactory.CreateLine(new Vertex(-1, -10), new Vertex(1, -10));
+            LineShape expected = ShapeFactory.CreateLine(new Vertex(-1, 10), new Vertex(1, 10));
+            this.ProjectionLineOnLine_Check(expected, line1, line2);
+        }
+
+        private void ProjectionLineOnLine_Check(LineShape expected, LineShape line1, LineShape line2)
+        {
+            LineShape res = ShapeOperations.ProjectionLineOnLine(line1, line2);
+            Assert.AreEqual(expected.Vertices[0].ToString(), res.Vertices[0].ToString());
+            Assert.AreEqual(expected.Vertices[1].ToString(), res.Vertices[1].ToString());
+        }
+        #endregion
     }
 }
