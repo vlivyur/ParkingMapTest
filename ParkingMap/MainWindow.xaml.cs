@@ -52,7 +52,7 @@
         {
             PolygonShape shape = (PolygonShape)e.TrackShape;
             double square = shape.GetArea(GeographyUnit.Meter, AreaUnit.SquareMeters);
-            this.txtSquare.Text = square.ToString();
+            this.txtArea.Text = square.ToString();
             this.DrawLots(shape);
         }
 
