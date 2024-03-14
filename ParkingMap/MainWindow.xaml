@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ParkingMap"
         xmlns:ThinkGeoUI="clr-namespace:ThinkGeo.UI.Wpf;assembly=ThinkGeo.UI.Wpf"
         mc:Ignorable="d"
+        Name="Main"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <ThinkGeoUI:MapView Grid.Column="0" Grid.Row="0" x:Name="mapView" Loaded="mapView_Loaded" MapClick="mapView_MapClick"></ThinkGeoUI:MapView>
@@ -24,20 +24,22 @@
             <Label Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="4" x:Name="lblSquare" Content="Square:" />
             <TextBox Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="3" Margin="4 4 4 4" x:Name="txtSquare" IsReadOnly="True" />
 
-            <Button Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="Calculate" Content="Calculate" Click="Calculate_Click" />
+            <CheckBox Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="4" x:Name="chkDebugLines" Content="Draw supporting lines" IsChecked="{Binding ElementName=Main, Path=DrawSupportingLines}" />
+            
+            <Button Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="btnCalculate" Content="Calculate" Click="Calculate_Click" />
 
-            <Label Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="4" x:Name="lblQtyLots" Content="Qty of lots:" />
-            <TextBox Grid.Column="0" Grid.Row="9" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="txtQtyLots" IsReadOnly="True" />
+            <Label Grid.Column="0" Grid.Row="9" Grid.ColumnSpan="4" x:Name="lblQtyLots" Content="Qty of lots:" />
+            <TextBox Grid.Column="0" Grid.Row="10" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="txtQtyLots" IsReadOnly="True" />
 
-            <Label Grid.Column="1" Grid.Row="10" x:Name="lblX" Content=":X" />
-            <TextBox Grid.Column="0" Grid.Row="10" Margin="4 4 4 4" x:Name="txtX" IsReadOnly="True" />
-            <Label Grid.Column="3" Grid.Row="10" x:Name="lblY" Content=":Y" />
-            <TextBox Grid.Column="2" Grid.Row="10" Margin="4 4 4 4" x:Name="txtY" IsReadOnly="True" />
+            <Label Grid.Column="1" Grid.Row="11" x:Name="lblX" Content=":X" />
+            <TextBox Grid.Column="0" Grid.Row="11" Margin="4 4 4 4" x:Name="txtX" Width="80" IsReadOnly="True" />
+            <Label Grid.Column="3" Grid.Row="11" x:Name="lblY" Content=":Y" />
+            <TextBox Grid.Column="2" Grid.Row="11" Margin="4 4 4 4" x:Name="txtY" Width="80" IsReadOnly="True" />
 
-            <Button Grid.Column="0" Grid.Row="11" Grid.ColumnSpan="4" x:Name="btnShowMap" Margin="4 4 4 4" Content="Hide map" Click="btnShowMap_Click" />
+            <Button Grid.Column="0" Grid.Row="12" Grid.ColumnSpan="4" x:Name="btnShowMap" Margin="4 4 4 4" Content="Hide map" Click="btnShowMap_Click" />
 
-            <Button Grid.Column="0" Grid.Row="12" Grid.ColumnSpan="2" x:Name="btnSave" Margin="4 4 4 4" Content="Save" Click="btnSave_Click" IsEnabled="False" />
-            <Button Grid.Column="2" Grid.Row="12" Grid.ColumnSpan="2" x:Name="btnLoad" Margin="4 4 4 4" Content="Load" Click="btnLoad_Click" IsEnabled="False" />
+            <Button Grid.Column="0" Grid.Row="13" Grid.ColumnSpan="2" x:Name="btnSave" Margin="4 4 4 4" Content="Save" Click="btnSave_Click" IsEnabled="False" />
+            <Button Grid.Column="2" Grid.Row="13" Grid.ColumnSpan="2" x:Name="btnLoad" Margin="4 4 4 4" Content="Load" Click="btnLoad_Click" IsEnabled="False" />
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -46,6 +48,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

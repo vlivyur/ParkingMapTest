@@ -1,24 +1,15 @@
 ﻿namespace ParkingMap
 {
-    using System.Collections.ObjectModel;
-    using System.Text;
     using System.Windows;
-    using System.Windows.Controls;
-    using System.Windows.Data;
-    using System.Windows.Documents;
-    using System.Windows.Input;
-    using System.Windows.Media;
-    using System.Windows.Media.Imaging;
-    using System.Windows.Navigation;
-    using System.Windows.Shapes;
     using ThinkGeo.Core;
-    using ThinkGeo.UI.Wpf;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        public bool DrawSupportingLines { get; set; } = false;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -53,8 +44,6 @@
             //LayerOverlay secondaryoverlay = new();
             //secondaryoverlay.Layers.Add(LayerNames.SecondaryLayer, this.secondarylayer);
             //this.mapView.Overlays.Add(LayerNames.SecondaryOverlay, secondaryoverlay);
-
-            // TODO: overlay with selected lots
 
             this.mapView.TrackOverlay.TrackEnded += this.TrackOverlay_OnPolygonDrawn;
         }
@@ -94,7 +83,7 @@
         private void btnDraw_Checked(object sender, RoutedEventArgs e)
         {
             this.mapView.TrackOverlay.TrackMode = TrackMode.Polygon;
-            this.lblDrawAction.Content = "Draw parking space...";
+            this.lblDrawAction.Content = "Draw parking space, last point with double click";
         }
 
         private void btnDraw_Unchecked(object sender, RoutedEventArgs e)
@@ -123,14 +112,23 @@
             //    this.secondarylayer.FeatureSource.Open();
             //this.secondarylayer.Clear();
             //this.secondarylayer.FeatureSource.BeginTransaction();
+            if (!this.parkinglotslayer.FeatureSource.IsOpen)
+                this.parkinglotslayer.FeatureSource.Open();
+            this.parkinglotslayer.Clear();
+            this.parkinglotslayer.FeatureSource.BeginTransaction();
 
             // draw lots along the longest side
             LineShape longestLine = ShapeOperations.LongestSideOfShape(where);
             longestLine.ScaleUp(100);
             double angle = ShapeOperations.InclineOfTheLine(longestLine.Vertices[0], longestLine.Vertices[1]);
+            angle = (360 - angle) % 360;
+            if (this.DrawSupportingLines)
+                this.parkinglotslayer.FeatureSource.AddFeature(longestLine);
             // in which side of longest line our figure is
             LineShape nextline = (LineShape)longestLine.CloneDeep();
             nextline.TranslateByDegree(length, angle);
+            if (this.DrawSupportingLines)
+                this.parkinglotslayer.FeatureSource.AddFeature(nextline);
             MultilineShape intersection = nextline.GetIntersection(where);
             if (intersection.Lines.Count == 0)
             {
@@ -145,16 +143,13 @@
                 while (intersection.Lines.Count > 0)
                 {
                     lines.Add(intersection.Lines[0]);
-                    //this.secondarylayer.FeatureSource.AddFeature(intersection.Lines[0]);
+                    if (this.DrawSupportingLines)
+                        this.parkinglotslayer.FeatureSource.AddFeature(intersection.Lines[0]);
                     nextline.TranslateByDegree(length, angle);
                     intersection = nextline.GetIntersection(where);
                 }
             }
             // TODO: draw parking lots
-            if (!this.parkinglotslayer.FeatureSource.IsOpen)
-                this.parkinglotslayer.FeatureSource.Open();
-            this.parkinglotslayer.Clear();
-            this.parkinglotslayer.FeatureSource.BeginTransaction();
             int countOfLots = 0;
             if (lines.Count > 0)
             {
@@ -162,18 +157,22 @@
                 for (int i = 1; i < lines.Count; i++)
                 {
                     LineShape line2 = lines[i];
-                    LineShape shortline = ShapeOperations.ProjectionLineOnLineGet(line1, line2);
-                    angle = ShapeOperations.InclineOfTheLine(shortline.Vertices[0], shortline.Vertices[1]);
-                    //this.parkinglotslayer.FeatureSource.AddFeature(shortline);
-                    double shortlinelength = shortline.GetLength(GeographyUnit.Meter, DistanceUnit.Meter) - width;
-                    for (double l = 0; l < shortlinelength; l += width)
+                    LineShape? shortline = ShapeOperations.ProjectionLineOnLine(line1, line2);
+                    if (shortline != null)
                     {
-                        PointShape point = shortline.GetPointOnALine(StartingPoint.FirstPoint, l, GeographyUnit.Meter, DistanceUnit.Meter);
-                        PolygonShape r = ShapeOperations.ParkingLotDraw(point, angle, length, width);
-                        this.parkinglotslayer.FeatureSource.AddFeature(r);
-                        countOfLots++;
+                        //angle = ShapeOperations.InclineOfTheLine(shortline.Vertices[0], shortline.Vertices[1]);
+                        //angle = 360 - angle;
+                        //this.parkinglotslayer.FeatureSource.AddFeature(shortline);
+                        double shortlinelength = shortline.GetLength(GeographyUnit.Meter, DistanceUnit.Meter) - width;
+                        for (double l = 0; l < shortlinelength; l += width)
+                        {
+                            PointShape point = shortline.GetPointOnALine(StartingPoint.FirstPoint, l, GeographyUnit.Meter, DistanceUnit.Meter);
+                            PolygonShape r = ShapeOperations.ParkingLotDraw(point, angle, length, width);
+                            this.parkinglotslayer.FeatureSource.AddFeature(r);
+                            countOfLots++;
+                        }
+                        line1 = line2;
                     }
-                    line1 = line2;
                 }
             }
             this.parkinglotslayer.FeatureSource.CommitTransaction();
