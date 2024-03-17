@@ -28,8 +28,11 @@
             
             <Button Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="btnCalculate" Content="Calculate" Click="Calculate_Click" />
 
-            <Label Grid.Column="0" Grid.Row="9" Grid.ColumnSpan="4" x:Name="lblQtyLots" Content="Qty of lots:" />
-            <TextBox Grid.Column="0" Grid.Row="10" Grid.ColumnSpan="4" Margin="4 4 4 4" x:Name="txtQtyLots" IsReadOnly="True" />
+            <Label Grid.Column="0" Grid.Row="9" x:Name="lblQtyLots" Content="Qty of lots:" />
+            <TextBox Grid.Column="1" Grid.Row="9" Grid.ColumnSpan="3" Margin="4 4 4 4" x:Name="txtQtyLots" IsReadOnly="True" />
+
+            <Label Grid.Column="0" Grid.Row="10" x:Name="lblLotsArea" Content="Lots area:" />
+            <TextBox Grid.Column="1" Grid.Row="10" Grid.ColumnSpan="3" Margin="4 4 4 4" x:Name="txtLotsArea" IsReadOnly="True" />
 
             <Label Grid.Column="1" Grid.Row="11" x:Name="lblX" Content=":X" />
             <TextBox Grid.Column="0" Grid.Row="11" Margin="4 4 4 4" x:Name="txtX" Width="80" IsReadOnly="True" />

@@ -61,7 +61,7 @@
 
         private async void DrawLots(PolygonShape where)
         {
-            this.BuildLots(where);
+            this.ProcessDrawnArea(where);
             return;
         }
 
@@ -108,6 +108,13 @@
 
         private async void ProcessDrawnAreas(Collection<Feature> polygons)
         {
+            double width;
+            if (!double.TryParse(this.txtWidth.Text, out width))
+                return;
+            double length;
+            if (!double.TryParse(this.txtLength.Text, out length))
+                return;
+
             //if (!this.secondarylayer.FeatureSource.IsOpen)
             //    this.secondarylayer.FeatureSource.Open();
             //this.secondarylayer.Clear();
@@ -118,13 +125,21 @@
                 this.parkinglotslayer.Clear();
             this.parkinglotslayer.FeatureSource.BeginTransaction();
 
-            List<BaseShape> result = new();
+            int qtylots = 0;
+            double shapearea = 0;
             foreach (Feature area in polygons)
             {
-                result = this.BuildLots((PolygonShape)area.GetShape());
-                foreach (BaseShape resshape in result)
+                ParkingLotsInfo result = ShapeOperations.GenerateLots((PolygonShape)area.GetShape(), width, length, this.chkDebugLines.IsChecked == true);
+                foreach (BaseShape resshape in result.ParkingLots)
                     this.parkinglotslayer.FeatureSource.AddFeature(resshape);
+                foreach(BaseShape resshape in result.AuxillaryLines)
+                    this.parkinglotslayer.FeatureSource.AddFeature(resshape);
+                qtylots += result.QtyLots;
+                shapearea += result.ShapeArea;
             }
+
+            this.txtArea.Text = shapearea.ToString("#.0000");
+            this.txtQtyLots.Text = qtylots.ToString();
 
             this.parkinglotslayer.FeatureSource.CommitTransaction();
             this.parkinglotslayer.FeatureSource.Close();
@@ -133,77 +148,36 @@
             await this.mapView.RefreshAsync();
         }
 
-        private List<BaseShape> BuildLots(PolygonShape where)
+        private async void ProcessDrawnArea(PolygonShape shape)
         {
-            List<BaseShape> result = new();
             double width;
             if (!double.TryParse(this.txtWidth.Text, out width))
-                return result;
+                return;
             double length;
             if (!double.TryParse(this.txtLength.Text, out length))
-                return result;
+                return;
 
-            // draw lots along the longest side
-            LineShape longestLine = ShapeOperations.LongestSideOfShape(where);
-            longestLine.ScaleUp(100);
-            double angle = ShapeOperations.InclineOfTheLine(longestLine.Vertices[0], longestLine.Vertices[1]);
-            angle = (360 - angle) % 360;
-            if (this.DrawSupportingLines)
-                this.parkinglotslayer.FeatureSource.AddFeature(longestLine);
-            // in which side of longest line our figure is
-            LineShape nextline = (LineShape)longestLine.CloneDeep();
-            nextline.TranslateByDegree(length, angle);
-            if (this.DrawSupportingLines)
-                this.parkinglotslayer.FeatureSource.AddFeature(nextline);
-            MultilineShape intersection = nextline.GetIntersection(where);
-            if (intersection.Lines.Count == 0)
-            {
-                angle = (angle + 180) % 360;
-            }
-            // ready to draw parallel lines
-            nextline = (LineShape)longestLine.CloneDeep();
-            intersection = nextline.GetIntersection(where);
-            List<LineShape> lines = new();
-            if (intersection.Lines.Count > 0) // shape isn't too narrow
-            {
-                while (intersection.Lines.Count > 0)
-                {
-                    lines.Add(intersection.Lines[0]);
-                    if (this.DrawSupportingLines)
-                        this.parkinglotslayer.FeatureSource.AddFeature(intersection.Lines[0]);
-                    nextline.TranslateByDegree(length, angle);
-                    intersection = nextline.GetIntersection(where);
-                }
-            }
-            // TODO: draw parking lots
-            int countOfLots = 0;
-            if (lines.Count > 0)
-            {
-                LineShape line1 = lines[0];
-                for (int i = 1; i < lines.Count; i++)
-                {
-                    LineShape line2 = lines[i];
-                    LineShape? shortline = ShapeOperations.ProjectionLineOnLine(line1, line2);
-                    if (shortline != null)
-                    {
-                        //angle = ShapeOperations.InclineOfTheLine(shortline.Vertices[0], shortline.Vertices[1]);
-                        //angle = 360 - angle;
-                        //this.parkinglotslayer.FeatureSource.AddFeature(shortline);
-                        double shortlinelength = shortline.GetLength(GeographyUnit.Meter, DistanceUnit.Meter) - width;
-                        for (double l = 0; l < shortlinelength; l += width)
-                        {
-                            PointShape point = shortline.GetPointOnALine(StartingPoint.FirstPoint, l, GeographyUnit.Meter, DistanceUnit.Meter);
-                            PolygonShape r = ShapeOperations.ParkingLotDraw(point, angle, length, width);
-                            this.parkinglotslayer.FeatureSource.AddFeature(r);
-                            countOfLots++;
-                        }
-                        line1 = line2;
-                    }
-                }
-            }
-            this.txtQtyLots.Text = countOfLots.ToString();
-            return result;
+            if (!this.parkinglotslayer.FeatureSource.IsOpen)
+                this.parkinglotslayer.FeatureSource.Open();
+            if (!this.parkinglotslayer.FeatureSource.IsInTransaction)
+                this.parkinglotslayer.Clear();
+            this.parkinglotslayer.FeatureSource.BeginTransaction();
+
+            ParkingLotsInfo result = ShapeOperations.GenerateLots(shape, width, length, this.chkDebugLines.IsChecked == true);
+            foreach (BaseShape resshape in result.ParkingLots)
+                this.parkinglotslayer.FeatureSource.AddFeature(resshape);
+            foreach (BaseShape resshape in result.AuxillaryLines)
+                this.parkinglotslayer.FeatureSource.AddFeature(resshape);
+
+            this.txtArea.Text = result.ShapeArea.ToString("#.0000");
+            this.txtQtyLots.Text = result.QtyLots.ToString();
+            this.txtLotsArea.Text = result.LotsArea.ToString("#.0000");
+
+            this.parkinglotslayer.FeatureSource.CommitTransaction();
+            this.parkinglotslayer.FeatureSource.Close();
+            await this.mapView.RefreshAsync();
         }
+
 
         private async void btnSave_Click(object sender, RoutedEventArgs e)
         {
