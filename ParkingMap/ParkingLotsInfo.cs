@@ -15,6 +15,6 @@
         /// <summary>List of all suitable parking lots</summary>
         public List<BaseShape> ParkingLots { get; set; } = new();
         /// <summary>Auxillary shapes used in calculations</summary>
-        public List<BaseShape> AuxillaryLines { get; set; } = new();
+        public List<BaseShape> AuxiliaryLines { get; set; } = new();
     }
 }

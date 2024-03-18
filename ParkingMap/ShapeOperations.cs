@@ -111,69 +111,67 @@
             // draw lots along the longest side
             LineShape longestLine = ShapeOperations.LongestSideOfShape(where);
             longestLine.ScaleUp(100);
-            double angle = ShapeOperations.InclinationOfLine(longestLine.Vertices[0], longestLine.Vertices[1]);
-            angle = (360 - angle) % 360;
             if (includeSupportingLines)
-                result.AuxillaryLines.Add(longestLine);
+                result.AuxiliaryLines.Add(longestLine);
+            double angle = (360 - ShapeOperations.InclinationOfLine(longestLine.Vertices[0], longestLine.Vertices[1])) % 360;
+
             // in which side of longest line our figure is
-            LineShape nextline = (LineShape)longestLine.CloneDeep();
-            nextline.TranslateByDegree(length, angle);
+            LineShape line2 = (LineShape)longestLine.CloneDeep();
+            line2.TranslateByDegree(length, angle);
+            MultilineShape intersection = line2.GetIntersection(where);
             if (includeSupportingLines)
-                result.AuxillaryLines.Add(nextline);
-            MultilineShape intersection = nextline.GetIntersection(where);
+                result.AuxiliaryLines.Add(line2);
             if (intersection.Lines.Count == 0)
             {
                 angle = (angle + 180) % 360;
-                nextline = (LineShape)longestLine.CloneDeep();
-                nextline.TranslateByDegree(length, angle);
-                intersection = nextline.GetIntersection(where);
+                line2 = (LineShape)longestLine.CloneDeep();
+                line2.TranslateByDegree(length, angle);
+                intersection = line2.GetIntersection(where);
+                if (includeSupportingLines)
+                    result.AuxiliaryLines.Add(line2);
             }
-            // ready to draw parallel lines
-            List<LineShape> lines = new();
+            // draw parallel lines of lots
             if (intersection.Lines.Count > 0) // shape isn't too narrow
             {
-                nextline = ShapeOperations.LongestSideOfShape(where);
-                intersection = nextline.GetIntersection(where);
-                nextline.ScaleUp(100);
+                LineShape line1 = ShapeOperations.LongestSideOfShape(where);
+                intersection = line1.GetIntersection(where);
+                line1.ScaleUp(100);
+                int countOfLots = 0;
+                double lotsArea = 0;
+                int row = 1;
                 while (intersection.Lines.Count > 0)
                 {
-                    lines.Add(intersection.Lines[0]);
+                    line1 = intersection.Lines[0];
+                    line2 = (LineShape)longestLine.CloneDeep();
+                    line2.TranslateByDegree(row * length, angle);
+                    intersection = line2.GetIntersection(where);
+                    if (intersection.Lines.Count <= 0)
+                        break;
+                    line2 = intersection.Lines[0];
                     if (includeSupportingLines)
-                        result.AuxillaryLines.Add(intersection.Lines[0]);
-                    nextline.TranslateByDegree(length, angle);
-                    intersection = nextline.GetIntersection(where);
-                }
-            }
-            // draw parking lots
-            int countOfLots = 0;
-            double lotsArea = 0;
-            if (lines.Count > 0)
-            {
-                LineShape line1 = lines[0];
-                for (int i = 1; i < lines.Count; i++)
-                {
-                    LineShape line2 = lines[i];
+                        result.AuxiliaryLines.Add(line2);
+                    // got two lines, draw lots in the middle of them
                     LineShape? shortline = ShapeOperations.ProjectionLineOnLine(line1, line2);
                     if (shortline != null)
                     {
                         double shortlinelength = shortline.GetLength(GeographyUnit.Meter, DistanceUnit.Meter);
-                        PointShape point = new PointShape(shortline.Vertices[0]);
+                        PointShape point1 = new PointShape(shortline.Vertices[0]);
                         for (double l = width; l <= shortlinelength; l += width)
                         {
                             PointShape point2 = shortline.GetPointOnALine(StartingPoint.FirstPoint, l, GeographyUnit.Meter, DistanceUnit.Meter);
-                            PolygonShape r = ShapeOperations.ShapeOfParkingLot(point, point2, length, angle);
-                            point = point2;
+                            PolygonShape r = ShapeOperations.ShapeOfParkingLot(point1, point2, length, angle);
                             result.ParkingLots.Add(r);
+                            point1 = point2;
                             countOfLots++;
                             lotsArea += r.GetArea(GeographyUnit.Meter, AreaUnit.SquareMeters);
                         }
-                        line1 = line2;
                     }
+                    row++;
                 }
+                result.QtyLots = countOfLots;
+                result.ShapeArea = where.GetArea(GeographyUnit.Meter, AreaUnit.SquareMeters);
+                result.LotsArea = lotsArea;
             }
-            result.QtyLots = countOfLots;
-            result.ShapeArea = where.GetArea(GeographyUnit.Meter, AreaUnit.SquareMeters);
-            result.LotsArea = lotsArea;
             return result;
         }
     }

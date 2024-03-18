@@ -125,21 +125,24 @@
                 this.parkinglotslayer.Clear();
             this.parkinglotslayer.FeatureSource.BeginTransaction();
 
-            int qtylots = 0;
             double shapearea = 0;
+            int qtylots = 0;
+            double lotsarea = 0;
             foreach (Feature area in polygons)
             {
                 ParkingLotsInfo result = ShapeOperations.GenerateLots((PolygonShape)area.GetShape(), width, length, this.chkDebugLines.IsChecked == true);
                 foreach (BaseShape resshape in result.ParkingLots)
                     this.parkinglotslayer.FeatureSource.AddFeature(resshape);
-                foreach(BaseShape resshape in result.AuxillaryLines)
+                foreach(BaseShape resshape in result.AuxiliaryLines)
                     this.parkinglotslayer.FeatureSource.AddFeature(resshape);
-                qtylots += result.QtyLots;
                 shapearea += result.ShapeArea;
+                qtylots += result.QtyLots;
+                lotsarea += result.LotsArea;
             }
 
             this.txtArea.Text = shapearea.ToString("#.0000");
             this.txtQtyLots.Text = qtylots.ToString();
+            this.txtLotsArea.Text = lotsarea.ToString("#.0000");
 
             this.parkinglotslayer.FeatureSource.CommitTransaction();
             this.parkinglotslayer.FeatureSource.Close();
@@ -166,7 +169,7 @@
             ParkingLotsInfo result = ShapeOperations.GenerateLots(shape, width, length, this.chkDebugLines.IsChecked == true);
             foreach (BaseShape resshape in result.ParkingLots)
                 this.parkinglotslayer.FeatureSource.AddFeature(resshape);
-            foreach (BaseShape resshape in result.AuxillaryLines)
+            foreach (BaseShape resshape in result.AuxiliaryLines)
                 this.parkinglotslayer.FeatureSource.AddFeature(resshape);
 
             this.txtArea.Text = result.ShapeArea.ToString("#.0000");

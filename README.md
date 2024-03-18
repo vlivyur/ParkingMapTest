@@ -7,8 +7,7 @@ With pressed Draw button a user draws an outline for parking space. 
 Size of a parking lot could be adjusted with Width and Length fields and recalculated with button Calculate.
 When Draw button is pressed it is impossible to move map with mouse.
 Clear button is for removing user's drawn figure (first click) or generated parking lots (second click).
-Load button adds another area to current 
+Load button adds another area to currently existing.
 # Known issues
-Not all figures could be processed. If this happend to you, try to start drawing from a horisontal line and put points anticlockwise.
 In most cases figure should be convex.
 After loading another area, it stops showing drawn areas.
